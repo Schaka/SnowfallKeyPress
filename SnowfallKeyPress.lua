@@ -15,10 +15,43 @@ local a;
 local l;
 local B=false;
 local u={};
-local F={{command="^ACTIONBUTTON(%d+)$",attributes={{"type","macro"},{"actionbutton","%1"}}},{command="^MULTIACTIONBAR1BUTTON(%d+)$",attributes={{"type","click"},{"clickbutton","MultiBarBottomLeftButton%1"}}},{command="^MULTIACTIONBAR2BUTTON(%d+)$",attributes={{"type","click"},{"clickbutton","MultiBarBottomRightButton%1"}}},{command="^MULTIACTIONBAR3BUTTON(%d+)$",attributes={{"type","click"},{"clickbutton","MultiBarRightButton%1"}}},{command="^MULTIACTIONBAR4BUTTON(%d+)$",attributes={{"type","click"},{"clickbutton","MultiBarLeftButton%1"}}},{command="^SHAPESHIFTBUTTON(%d+)$",attributes={{"type","click"},{"clickbutton","ShapeshiftButton%1"}}},{command="^BONUSACTIONBUTTON(%d+)$",attributes={{"type","click"},{"clickbutton","PetActionButton%1"}}},{command="^MULTICASTSUMMONBUTTON(%d+)$",attributes={{"type","click"},{"multicastsummon","%1"}}},{command="^MULTICASTRECALLBUTTON1$",attributes={{"type","click"},{"clickbutton","MultiCastRecallSpellButton"}}},{command="^CLICK (.+):([^:]+)$",attributes={{"type","click"},{"clickbutton","%1"}}},{command="^MACRO (.+)$",attributes={{"type","macro"},{"macro","%1"}}},{command="^SPELL (.+)$",attributes={{"type","spell"},{"spell","%1"}}},{command="^ITEM (.+)$",attributes={{"type","item"},{"item","%1"}}},};
+local F={
+	{command="^ACTIONBUTTON(%d+)$",			attributes={{"type","macro"},	{"actionbutton","%1"}}},
+	{command="^MULTIACTIONBAR1BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarBottomLeftButton%1"}}},
+	{command="^MULTIACTIONBAR2BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarBottomRightButton%1"}}},
+	{command="^MULTIACTIONBAR3BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarRightButton%1"}}},
+	{command="^MULTIACTIONBAR4BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarLeftButton%1"}}},
+	{command="^SHAPESHIFTBUTTON(%d+)$",		attributes={{"type","click"},	{"clickbutton","ShapeshiftButton%1"}}},
+	{command="^BONUSACTIONBUTTON(%d+)$",	attributes={{"type","click"},	{"clickbutton","PetActionButton%1"}}},
+	{command="^MULTICASTSUMMONBUTTON(%d+)$",attributes={{"type","click"},	{"multicastsummon","%1"}}},
+	{command="^MULTICASTRECALLBUTTON1$",	attributes={{"type","click"},	{"clickbutton","MultiCastRecallSpellButton"}}},
+	{command="^CLICK (.+):([^:]+)$",		attributes={{"type","click"},	{"clickbutton","%1"}}},
+	{command="^MACRO (.+)$",				attributes={{"type","macro"},	{"macro","%1"}}},
+	{command="^SPELL (.+)$",				attributes={{"type","spell"},	{"spell","%1"}}},
+	{command="^ITEM (.+)$",					attributes={{"type","item"},	{"item","%1"}}},
+	};
+
 local d=true;
+
 local o=CreateFrame("Frame");
-local T={["actionbar"]=true,["action"]=true,["pet"]=true,["multispell"]=true,["spell"]=true,["item"]=true,["macro"]=true,["cancelaura"]=true,["stop"]=true,["target"]=true,["focus"]=true,["assist"]=true,["maintank"]=true,["mainassist"]=true};
+
+local T={
+	["actionbar"]=true,
+	["action"]=true,
+	["pet"]=true,
+	["multispell"]=true,
+	["spell"]=true,
+	["item"]=true,
+	["macro"]=true,
+	["cancelaura"]=true,
+	["stop"]=true,
+	["target"]=true,
+	["focus"]=true,
+	["assist"]=true,
+	["maintank"]=true,
+	["mainassist"]=true
+	};
+	
 local f={"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9","`","-","=","[","]","\\",";","'",".",",","/","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE","DELETE","DOWN","END","ENTER","ESCAPE","HOME","INSERT","LEFT","NUMLOCK","NUMPAD0","NUMPAD1","NUMPAD2","NUMPAD3","NUMPAD4","NUMPAD5","NUMPAD6","NUMPAD7","NUMPAD8","NUMPAD9","NUMPADDECIMAL","NUMPADDIVIDE","NUMPADMINUS","NUMPADMULTIPLY","NUMPADPLUS","PAGEDOWN","PAGEUP","PAUSE","RIGHT","SCROLLLOCK","SPACE","TAB","UP","BUTTON3","BUTTON4","BUTTON5",};
 local h={"ALT","CTRL","SHIFT",};
 local S={};
@@ -368,10 +401,10 @@ local function I(e)
 return not not(type(e)=="table"and type(e.IsObjectType)=="function"and issecurevariable(e,"IsObjectType")and e:IsObjectType("Button")and select(2,e:IsProtected()));
 end
 
---[[if(SnowfallKeyPress.animation.savedDefaultHandler)then
+if(SnowfallKeyPress.animation.savedDefaultHandler)then
   SnowfallKeyPress.animation.defaultHandler=SnowfallKeyPress.animation.savedDefaultHandler;
   SnowfallKeyPress.animation.savedDefaultHandler=nil;
-end]]
+end
 local function A(e)
 	if(not SnowfallKeyPressSV.animation)then
 	return;
@@ -648,3 +681,49 @@ o:RegisterEvent("UPDATE_BINDINGS");
 end
 o:SetScript("OnEvent",t);
 o:RegisterEvent("ADDON_LOADED");
+
+if Bartender3 then
+	hooksecurefunc(Bartender3.Class.Button.prototype, "init", function(self, parent, id)
+			local button = _G["BT3Button"..id]
+			button:RegisterForClicks("AnyDown")
+			button.clickButtonName=button:GetName()
+			button:SetScript("PostClick", A);
+		end)
+end
+
+if Bartender4 then
+	local Bartender4_oldfunc = Bartender4.Button.Create
+	function Bartender4.Button:Create(id, parent)
+		local button = Bartender4_oldfunc(self, id, parent)			
+		button:RegisterForClicks("AnyDown")
+		button.clickButtonName=button:GetName()
+		button:SetScript("PostClick", A);
+		return button
+	end
+	
+	hooksecurefunc(Bartender4.modules.StanceBar, "CreateStanceButton", function(self, id)
+		local button = _G[string.format("BT4StanceButton%d", id)]
+		button:RegisterForClicks("AnyDown")
+		button.clickButtonName=button:GetName()
+		button:SetScript("PostClick", A);
+	end)
+	
+	hooksecurefunc(Bartender4.modules.PetBar, "OnEnable", function(self, ...)
+		for _, button in pairs(self.bar.buttons) do
+			button:RegisterForClicks("AnyDown")
+			button.clickButtonName=button:GetName()
+			button:SetScript("PostClick", A);
+		end
+	end)
+end
+
+if Bongos3 then
+	local Bongos3_oldfunc = Bongos3.modules.ActionBar.Button.Create
+		function Bongos3.modules.ActionBar.Button:Create(parent)
+			local button = Bongos3_oldfunc(self, parent)			
+			button:RegisterForClicks("AnyDown")
+			button.clickButtonName=button:GetName()
+			button:SetScript("PostClick", A);
+			return button
+		end
+end	
