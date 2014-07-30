@@ -122,7 +122,8 @@ local function i(n,o)local e,t;
             return false;
           end
           local i;
-          local function h()wipe(a);
+          local function h()
+			wipe(a);
             wipe(r);
             for o,e in n(f)do
               if(s(e,"-."))then
@@ -363,37 +364,46 @@ e.scrollBarTextureBottom:SetWidth(31);
 e.scrollBarTextureBottom:SetHeight(106);
 e.scrollBarTextureBottom:SetPoint("BOTTOMLEFT",e.scrollBar,"BOTTOMRIGHT",-2,-2);
 e.scrollBarTextureBottom:SetTexCoord(.515625,1,0,.4140625);
-hooksecurefunc("ShowUIPanel",function()if(KeyBindingFrame)then KeyBindingFrame.mode=nil;
-  end end);
+hooksecurefunc("ShowUIPanel",function()
+	if(KeyBindingFrame)then 
+		KeyBindingFrame.mode=nil;
+	end 
+end);
+
 local b;
 local f;
 do
 local n={};
+local SFKButtons = {};
 local t=0;
-function b()local e;
-  if(#n>0)then
-    e=table.remove(n);
-  else
-    t=t+1;
-    e=CreateFrame("Button","SnowfallKeyPress_Button_"..tostring(t),nil,"SecureActionButtonTemplate");
-    e:RegisterForClicks("AnyDown");
-    -- SecureHandlerSetFrameRef(e,"VehicleMenuBar",VehicleMenuBar);
-    -- SecureHandlerSetFrameRef(e,"BonusActionBarFrame",BonusActionBarFrame);
-    -- SecureHandlerSetFrameRef(e,"MultiCastSummonSpellButton",MultiCastSummonSpellButton);
-    -- SecureHandlerExecute(e,[[
-      -- VehicleMenuBar = self:GetFrameRef("VehicleMenuBar");
+function b()
+	local e;
+	if(#n>0)then
+		e=table.remove(n);
+		e=table.remove(SFKButtons);
+	else
+		t=t+1;
+		e=CreateFrame("Button","SnowfallKeyPress_Button_"..tostring(t),nil,"SecureActionButtonTemplate");
+		e:RegisterForClicks("AnyDown");
+		-- SecureHandlerSetFrameRef(e,"VehicleMenuBar",VehicleMenuBar);
+		-- SecureHandlerSetFrameRef(e,"BonusActionBarFrame",BonusActionBarFrame);
+		-- SecureHandlerSetFrameRef(e,"MultiCastSummonSpellButton",MultiCastSummonSpellButton);
+		-- SecureHandlerExecute(e,[[
+		  -- VehicleMenuBar = self:GetFrameRef("VehicleMenuBar");
 
-      -- BonusActionBarFrame = self:GetFrameRef("BonusActionBarFrame");
+		  -- BonusActionBarFrame = self:GetFrameRef("BonusActionBarFrame");
 
-      -- MultiCastSummonSpellButton = self:GetFrameRef("MultiCastSummonSpellButton");
+		  -- MultiCastSummonSpellButton = self:GetFrameRef("MultiCastSummonSpellButton");
 
-      -- ]]);
-  end
-  return e;
+		  -- ]]);
+	end
+	return e;
 end
-function f(e)if(e)then
-  table.insert(n,e);
-end
+function f(e)
+	if(e)then
+		table.insert(n,e);
+		table.insert(SFKButtons,e);
+	end
 end
 end
 
@@ -425,7 +435,8 @@ if(not t and SnowfallKeyPress.animation.defaultHandler)then
   SnowfallKeyPress.animation.defaultHandler(e);
 end
 end
-local function S(L,p,f,d,a)local e;
+local function S(L,p,f,d,a)
+  local e;
   local i,t;
   local l,h,O;
   local B,S,u;
@@ -466,24 +477,17 @@ local function S(L,p,f,d,a)local e;
             e.clickButtonName=t;
             e:SetScript("PostClick",A);
             elseif(i=="actionbutton")then
-              -- SecureHandlerWrapScript(e,"OnClick",e,[[
-                -- if (VehicleMenuBar:IsProtected() and VehicleMenuBar:IsShown() and ]]..tostring(tonumber(t)<=VEHICLE_MAX_ACTIONBUTTONS)..[[) then
-                  -- self:SetAttribute("macrotext", "/click VehicleMenuBarActionButton]]..t..[[");
-
-                -- elseif (BonusActionBarFrame:IsProtected() and BonusActionBarFrame:IsShown()) then
-                  -- self:SetAttribute("macrotext", "/click BonusActionButton]]..t..[[");
-
-                -- else
-                  -- self:SetAttribute("macrotext", "/click ActionButton]]..t..[[");
-
-                -- end
-                -- ]]);
-              -- e:SetScript("PostClick",function(e)e.clickButtonName=string.sub(e:GetAttribute("macrotext"),8);
-                -- A(e);
-                -- end);
-				e:SetAttribute("macrotext", "/click ActionButton"..t)
-				e.clickButtonName="ActionButton"..t
-				e:SetScript("PostClick", A);
+				if (BonusActionBarFrame:IsProtected() and BonusActionBarFrame:IsShown()) then
+					e:SetAttribute("macrotext", "/click BonusActionButton"..t)
+					e.clickButtonName="BonusActionButton"..t
+					e:SetScript("PostClick", A);
+					--print(e:GetName())
+				else
+					e:SetAttribute("macrotext", "/click ActionButton"..t)
+					e.clickButtonName="ActionButton"..t
+					e:SetScript("PostClick", A);
+					--print(e:GetName())
+				end	
 				--e:SetScript("PostClick", function() SnowfallKeyPress.animation.defaultHandler(e) end);
               elseif(i=="multicastsummon")then
                 -- SecureHandlerWrapScript(e,"OnClick",e,[[
@@ -506,11 +510,13 @@ local function S(L,p,f,d,a)local e;
           end
           return;
         end
-      end
+	end
+end
+    function l(self, event)
+	if(InCombatLockdown())then
+		return;
     end
-    function l()if(InCombatLockdown())then
-      return;
-    end
+	
     d=false;
     if(not SnowfallKeyPressSV.enable)then
       o:UnregisterEvent("UPDATE_BINDINGS");
@@ -577,6 +583,8 @@ local function S(L,p,f,d,a)local e;
     end
     d=true;
   end
+  --[[local tempFrame = CreateFrame("FRAME")
+  tempFrame:SetScript("OnUpdate", l)]]
   local function T(t,e)local n;
     for n,o in c(e.normals)do
       if(o.owner==t)then
@@ -660,9 +668,10 @@ for n,t in c(u)do
 end
 end
 hooksecurefunc("ClearOverrideBindings",s);
-local function t()if(not SnowfallKeyPressSV)then
-  SnowfallKeyPressSV={keys={},animation=true,enable=true};
-end
+local function t()
+	if(not SnowfallKeyPressSV)then
+	SnowfallKeyPressSV={keys={},animation=true,enable=true};
+	end
 r=SnowfallKeyPressSV.keys;
 a={};
 for n,t in n(r)do
@@ -678,8 +687,11 @@ InterfaceOptions_AddCategory(e);
 o:UnregisterAllEvents();
 o:SetScript("OnEvent",l);
 o:RegisterEvent("UPDATE_BINDINGS");
+o:RegisterEvent("ACTIONBAR_UPDATE_USABLE");
+o:RegisterEvent("ACTIONBAR_UPDATE_STATE");
+o:RegisterEvent("UPDATE_BONUS_ACTIONBAR");
 end
-o:SetScript("OnEvent",t);
+o:SetScript("OnEvent", t);
 o:RegisterEvent("ADDON_LOADED");
 
 if Bartender3 then
