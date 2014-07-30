@@ -72,14 +72,21 @@ end
 local animationNum = 1;
 local function animate(button)
   -- Don't animate invisible buttons
+ 
   if (not button:IsVisible()) then
     return true;
   end
-
+  if (BonusActionBarFrame:IsProtected() and BonusActionBarFrame:IsShown() and button.mainBar) then
+		button = _G["BonusActionButton"..button.clickButtonName]
+  elseif (button.mainBar and not BonusActionBarFrame:IsShown()) then
+		button = _G["ActionButton"..button.clickButtonName]
+  end
+  button:ClearAllPoints()
   local animation = animations[animationNum];
   local frame = animation.frame;
   local animationGroup = animation.animationGroup;
 
+  frame:ClearAllPoints()
   -- Place the animation on top of the button
   frame:SetFrameStrata(button:GetFrameStrata());
   frame:SetFrameLevel(button:GetFrameLevel() + 10);
