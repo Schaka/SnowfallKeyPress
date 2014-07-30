@@ -1,4 +1,33 @@
 ================================================================================
+1.6 - 12/20/2009
+
+Reduced the size of the default button animation by 25%, which should help keep it from obscuring other indicators on buttons.
+
+Added the ability for other addons to customize the SnowfallKeyPress button animations. An example is included.
+
+Removed the deprecated Lua configuration capability (the SnowfallKeyPressSettings folder). This functionality was superseded by the in-game GUI in version 1.2, so it's not needed any longer.
+
+
+
+================================================================================
+1.5.1 - 12/14/2009
+
+Fixed a bug introduced in 1.5 that was throwing a lua error with OPie.
+
+
+
+================================================================================
+1.5 - 12/12/2009
+
+Added button press animations (enable or disable through the configuration panel).
+
+Made some infrastructure changes that should be invisible to the user, but which should improve compatibility with addons written in the future that may have more complex behaviors than we generally see in addons today.
+
+Reduced the memory footprint of the code.
+
+
+
+================================================================================
 1.4 - 12/8/2009
 
 Updated the interface version to 30300 (patch 3.3).

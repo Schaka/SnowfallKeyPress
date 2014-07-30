@@ -1,680 +1,729 @@
-local stringmatch = string.match;
-local stringgsub = string.gsub;
-local pairs = pairs;
-local ipairs = ipairs;
-local _G = _G;
-local keysConfig;
+local function wipe(t)
+	for k,v in pairs(t) do
+		v = nil
+		k = nil
+	end
+end
 
+local s=string.match;
+local C=string.gsub;
+local c=pairs;
+local n=ipairs;
+local m=_G;
+local r;
+local a;
+local l;
+local B=false;
+local u={};
+local F={
+	{command="^ACTIONBUTTON(%d+)$",			attributes={{"type","macro"},	{"actionbutton","%1"}}},
+	{command="^MULTIACTIONBAR1BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarBottomLeftButton%1"}}},
+	{command="^MULTIACTIONBAR2BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarBottomRightButton%1"}}},
+	{command="^MULTIACTIONBAR3BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarRightButton%1"}}},
+	{command="^MULTIACTIONBAR4BUTTON(%d+)$",attributes={{"type","click"},	{"clickbutton","MultiBarLeftButton%1"}}},
+	{command="^SHAPESHIFTBUTTON(%d+)$",		attributes={{"type","click"},	{"clickbutton","ShapeshiftButton%1"}}},
+	{command="^BONUSACTIONBUTTON(%d+)$",	attributes={{"type","click"},	{"clickbutton","PetActionButton%1"}}},
+	{command="^MULTICASTSUMMONBUTTON(%d+)$",attributes={{"type","click"},	{"multicastsummon","%1"}}},
+	{command="^MULTICASTRECALLBUTTON1$",	attributes={{"type","click"},	{"clickbutton","MultiCastRecallSpellButton"}}},
+	{command="^CLICK (.+):([^:]+)$",		attributes={{"type","click"},	{"clickbutton","%1"}}},
+	{command="^MACRO (.+)$",				attributes={{"type","macro"},	{"macro","%1"}}},
+	{command="^SPELL (.+)$",				attributes={{"type","spell"},	{"spell","%1"}}},
+	{command="^ITEM (.+)$",					attributes={{"type","item"},	{"item","%1"}}},
+	};
 
-local updateBindings;
+local d=true;
 
+local o=CreateFrame("Frame");
 
-
-
---------------------------------------------------------------------------------
--- Initialization
-
-local templates = {
-  {command = "^ACTIONBUTTON(%d+)$",          attributes = {{"type", "macro"}, {"actionbutton", "%1"                         }}},  -- Action Buttons
-  {command = "^MULTIACTIONBAR1BUTTON(%d+)$", attributes = {{"type", "click"}, {"clickbutton",  "MultiBarBottomLeftButton%1" }}},  -- BottomLeft Action Buttons
-  {command = "^MULTIACTIONBAR2BUTTON(%d+)$", attributes = {{"type", "click"}, {"clickbutton",  "MultiBarBottomRightButton%1"}}},  -- BottomRight Action Buttons
-  {command = "^MULTIACTIONBAR3BUTTON(%d+)$", attributes = {{"type", "click"}, {"clickbutton",  "MultiBarRightButton%1"      }}},  -- Right Action Buttons (rightmost)
-  {command = "^MULTIACTIONBAR4BUTTON(%d+)$", attributes = {{"type", "click"}, {"clickbutton",  "MultiBarLeftButton%1"       }}},  -- Right ActionBar 2 Buttons (2nd from right)
-  {command = "^SHAPESHIFTBUTTON(%d+)$",      attributes = {{"type", "click"}, {"clickbutton",  "ShapeshiftButton%1"         }}},  -- Special Action Buttons (shapeshift/stance)
-  {command = "^BONUSACTIONBUTTON(%d+)$",     attributes = {{"type", "click"}, {"clickbutton",  "PetActionButton%1"          }}},  -- Secondary Action Buttons (pet/bonus)
-  {command = "^MULTICASTSUMMONBUTTON(%d+)$", attributes = {{"type", "click"}, {"multicastsummon", "%1"                      }}},  -- Call of the Elements/Ancestors/Spirits
-  {command = "^MULTICASTRECALLBUTTON1$",     attributes = {{"type", "click"}, {"clickbutton",  "MultiCastRecallSpellButton" }}},  -- Totemic Recall
-  {command = "^CLICK (.+):([^:]+)$",         attributes = {{"type", "click"}, {"clickbutton",  "%1"                         }}},  -- Clicks
-  {command = "^MACRO (.+)$",                 attributes = {{"type", "macro"}, {"macro",        "%1"                         }}},  -- Macros
-  {command = "^SPELL (.+)$",                 attributes = {{"type", "spell"}, {"spell",        "%1"                         }}},  -- Spells
-  {command = "^ITEM (.+)$",                  attributes = {{"type", "item" }, {"item",         "%1"                         }}},  -- Items
-};
-
-local hook = true;
-
-local overrideFrame = CreateFrame("Frame");
-
-local allowedTypeAttributes = {
-  ["actionbar"] = true,
-  ["action"] = true,
-  ["pet"] = true,
-  ["multispell"] = true,
-  ["spell"] = true,
-  ["item"] = true,
-  ["macro"] = true,
-  ["cancelaura"] = true,
-  ["stop"] = true,
-  ["target"] = true,
-  ["focus"] = true,
-  ["assist"] = true,
-  ["maintank"] = true,
-  ["mainassist"] = true
-};
-
-
-
---------------------------------------------------------------------------------
--- Keys and modifiers
-
-local keys = SnowfallKeyPress.settings.keys;
-local modifiers = SnowfallKeyPress.settings.modifiers;
-
--- Create a table of all possible combinations of modifiers
-local modifierCombos = {};
-local function createModifierCombos(base, modifierNum, modifiers, modifierCombos)
-  local modifier = modifiers[modifierNum];
-  if (not modifier) then
-    table.insert(modifierCombos, base);
+local T={
+	["actionbar"]=true,
+	["action"]=true,
+	["pet"]=true,
+	["multispell"]=true,
+	["spell"]=true,
+	["item"]=true,
+	["macro"]=true,
+	["cancelaura"]=true,
+	["stop"]=true,
+	["target"]=true,
+	["focus"]=true,
+	["assist"]=true,
+	["maintank"]=true,
+	["mainassist"]=true
+	};
+	
+local f={"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9","`","-","=","[","]","\\",";","'",".",",","/","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE","DELETE","DOWN","END","ENTER","ESCAPE","HOME","INSERT","LEFT","NUMLOCK","NUMPAD0","NUMPAD1","NUMPAD2","NUMPAD3","NUMPAD4","NUMPAD5","NUMPAD6","NUMPAD7","NUMPAD8","NUMPAD9","NUMPADDECIMAL","NUMPADDIVIDE","NUMPADMINUS","NUMPADMULTIPLY","NUMPADPLUS","PAGEDOWN","PAGEUP","PAUSE","RIGHT","SCROLLLOCK","SPACE","TAB","UP","BUTTON3","BUTTON4","BUTTON5",};
+local h={"ALT","CTRL","SHIFT",};
+local S={};
+local function i(e,o,t,n)local r=t[o];
+  if(not r)then
+    table.insert(n,e);
     return;
   end
-
-  local nextModifierNum = modifierNum + 1;
-  createModifierCombos(base, nextModifierNum, modifiers, modifierCombos);
-  createModifierCombos(base .. modifier .. "-", nextModifierNum, modifiers, modifierCombos);
+  local o=o+1;
+  i(e,o,t,n);
+  i(e..r.."-",o,t,n);
 end
-createModifierCombos("", 1, modifiers, modifierCombos);
-
-local function keyLess(key1, key2)
-  local comp1, comp2;
-
-  comp1 = string.gsub(key1, "^.*%-(.+)", "%1", 1);
-  comp2 = string.gsub(key2, "^.*%-(.+)", "%1", 1);
-  if (comp1 < comp2) then
+i("",1,h,S);
+local function i(n,o)local e,t;
+  e=string.gsub(n,"^.*%-(.+)","%1",1);
+  t=string.gsub(o,"^.*%-(.+)","%1",1);
+  if(e<t)then
     return true;
-  elseif (comp1 > comp2) then
-    return false;
-  end
-
-  comp1 = string.match(key1, "ALT%-");
-  comp2 = string.match(key2, "ALT%-");
-  if (not comp1 and comp2) then
-    return true;
-  elseif (comp1 and not comp2) then
-    return false;
-  end
-
-  comp1 = string.match(key1, "CTRL%-");
-  comp2 = string.match(key2, "CTRL%-");
-  if (not comp1 and comp2) then
-    return true;
-  elseif (comp1 and not comp2) then
-    return false;
-  end
-
-  comp1 = string.match(key1, "SHIFT%-");
-  comp2 = string.match(key2, "SHIFT%-");
-  if (not comp1 and comp2) then
-    return true;
-  elseif (comp1 and not comp2) then
-    return false;
-  end
-
-  return nil;
-end
-
-function insertKey(key)
-  local less, position;
-  position = 0;
-  for k, v in ipairs(keysConfig) do
-    less = keyLess(key, v);
-    if (less == nil) then
-      return nil;
-    elseif (less == true) then
-      break;
+    elseif(e>t)then
+      return false;
     end
-    position = k;
-  end
-  position = position + 1;
-  table.insert(keysConfig, position, key);
-  return position;
-end
-
-local function removeKey(key)
-  for k, v in ipairs(keysConfig) do
-    if (key == v) then
-      table.remove(keysConfig, k);
-      return k;
-    end
-  end
-  return false;
-end
-
---------------------------------------------------------------------------------
--- Configuration
-
-local scrollBarUpdate;
-
-local function populateKeysConfig()
-  wipe(keysConfig);
-  for _, key in ipairs(keys) do
-    if (stringmatch(key, "-.")) then
-      insertKey(stringmatch(key, "^-?(.*)$"));
-    else
-      for _, modifierCombo in ipairs(modifierCombos) do
-        insertKey(modifierCombo .. key);
+    e=string.match(n,"ALT%-");
+    t=string.match(o,"ALT%-");
+    if(not e and t)then
+      return true;
+      elseif(e and not t)then
+        return false;
       end
+      e=string.match(n,"CTRL%-");
+      t=string.match(o,"CTRL%-");
+      if(not e and t)then
+        return true;
+        elseif(e and not t)then
+          return false;
+        end
+        e=string.match(n,"SHIFT%-");
+        t=string.match(o,"SHIFT%-");
+        if(not e and t)then
+          return true;
+          elseif(e and not t)then
+            return false;
+          end
+          return nil;
+        end
+        local function t(o)a[o]=true;
+          local t,e;
+          e=0;
+          for r,n in n(r)do
+            t=i(o,n);
+            if(t==nil)then
+              return nil;
+              elseif(t==true)then
+                break;
+              end
+              e=r;
+            end
+            e=e+1;
+            table.insert(r,e,o);
+            return e;
+          end
+          local function b(e)a[e]=nil;
+            for t,n in n(r)do
+              if(e==n)then
+                table.remove(r,t);
+                return t;
+              end
+            end
+            return false;
+          end
+          local i;
+          local function h()wipe(a);
+            wipe(r);
+            for o,e in n(f)do
+              if(s(e,"-."))then
+                t(s(e,"^-?(.*)$"));
+              else
+                for o,n in n(S)do
+                  t(n..e);
+                end
+              end
+            end
+          end
+          local e=CreateFrame("Frame",nil,UIParent);
+          e:SetWidth(420);
+          e:SetHeight(310);
+          e:SetPoint("TOPLEFT",200,-200);
+          e:SetBackdrop({edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=16,insets={left=4,right=4,top=4,bottom=4},});
+          e:Hide();
+          e.name="SnowfallKeyPress";
+          e.title=e:CreateFontString(nil,"ARTWORK","GameFontNormalLarge");
+          e.title:SetPoint("TOPLEFT",16,-16);
+          e.title:SetPoint("RIGHT");
+          e.title:SetText(e.name);
+          e.title:SetJustifyH("LEFT");
+          local A;
+          do
+          local e=1;
+          local t={"Sound\\Spells\\bloodlust_player_cast_head.wav","Sound\\Creature\\Doomwalker\\GRULLAIR_Doom_Over02.wav",};
+          function A()if(SnowfallKeyPressSV.enable)then
+            PlaySoundFile(t[e]);
+            e=(e%#t)+1;
+          end
+        end
+      end
+      local function f(o,e)if(e=="UNKNOWN"or e=="LSHIFT"or e=="RSHIFT"or e=="LCTRL"or e=="RCTRL"or e=="LALT"or e=="RALT")then
+        return;
+      end
+      if(e=="LeftButton")then
+        e="BUTTON1"elseif(e=="RightButton")then
+        e="BUTTON2"elseif(e=="MiddleButton")then
+        e="BUTTON3"else
+        e=string.gsub(e,"^Button(%d+)$","BUTTON%1");
+      end
+      local o;
+      for o,n in n(S)do
+        t(n..e);
+      end
+      i();
+      l();
     end
+    local function p(n,e)if(e=="UNKNOWN"or e=="LSHIFT"or e=="RSHIFT"or e=="LCTRL"or e=="RCTRL"or e=="LALT"or e=="RALT")then
+      return;
+    end
+    if(e=="LeftButton")then
+      e="BUTTON1"elseif(e=="RightButton")then
+      e="BUTTON2"elseif(e=="MiddleButton")then
+      e="BUTTON3"else
+      e=string.gsub(e,"^Button(%d+)$","BUTTON%1");
+    end
+    if(IsShiftKeyDown())then
+      e="SHIFT-"..e;
+    end
+    if(IsControlKeyDown())then
+      e="CTRL-"..e;
+    end
+    if(IsAltKeyDown())then
+      e="ALT-"..e;
+    end
+    t(e);
+    i();
+    l();
   end
-end
-
-local configFrame = CreateFrame("Frame", nil, UIParent);
-configFrame:SetWidth(420);
-configFrame:SetHeight(310);
-configFrame:SetPoint("TOPLEFT", 200, -200);
-configFrame:SetBackdrop({
---  bgFile = "Interface\\BUTTONS\\WHITE8X8.BLP",
---  edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-  edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-  edgeSize = 16,
-  insets = {left = 4, right = 4, top = 4, bottom = 4},
-});
---configFrame:SetBackdropColor(0, 0, 0, 0);
-configFrame:Hide();
-
-configFrame.name = "SnowfallKeyPress";
-
-configFrame.title = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge");
-configFrame.title:SetPoint("TOPLEFT", 16, -16);
-configFrame.title:SetPoint("RIGHT");
-configFrame.title:SetText(configFrame.name);
-configFrame.title:SetJustifyH("LEFT");
-
-local modifierCombosConfig = {};
-createModifierCombos("", 1, modifiers, modifierCombosConfig);
-
-local function addAll(_, key)
-  if (
-    key == "UNKNOWN"
-    or key == "LSHIFT"
-    or key == "RSHIFT"
-    or key == "LCTRL"
-    or key == "RCTRL"
-    or key == "LALT"
-    or key == "RALT"
-  ) then
+  local function O(t,e)if(e=="UNKNOWN"or e=="LSHIFT"or e=="RSHIFT"or e=="LCTRL"or e=="RCTRL"or e=="LALT"or e=="RALT")then
     return;
   end
-  if (key == "LeftButton") then
-    key = "BUTTON1"
-  elseif (key == "RightButton") then
-    key = "BUTTON2"
-  elseif (key == "MiddleButton") then
-    key = "BUTTON3"
-  else
-    key = string.gsub(key, "^Button(%d+)$", "BUTTON%1");
+  if(e=="LeftButton")then
+    e="BUTTON1"elseif(e=="RightButton")then
+    e="BUTTON2"elseif(e=="MiddleButton")then
+    e="BUTTON3"else
+    e=string.gsub(e,"^Button(%d+)$","BUTTON%1");
   end
-
-  local offset;
-  for k, modifierCombo in ipairs(modifierCombosConfig) do
-    insertKey(modifierCombo .. key);
+  local t;
+  for n,t in n(S)do
+    b(t..e);
   end
-  scrollBarUpdate();
-  updateBindings();
+  i();
+  l();
 end
-
-local function addOne(_, key)
-  if (
-    key == "UNKNOWN"
-    or key == "LSHIFT"
-    or key == "RSHIFT"
-    or key == "LCTRL"
-    or key == "RCTRL"
-    or key == "LALT"
-    or key == "RALT"
-  ) then
-    return;
-  end
-  if (key == "LeftButton") then
-    key = "BUTTON1"
-  elseif (key == "RightButton") then
-    key = "BUTTON2"
-  elseif (key == "MiddleButton") then
-    key = "BUTTON3"
-  else
-    key = string.gsub(key, "^Button(%d+)$", "BUTTON%1");
-  end
-  if (IsShiftKeyDown()) then
-    key = "SHIFT-" .. key;
-  end
-  if (IsControlKeyDown()) then
-    key = "CTRL-" .. key;
-  end
-  if (IsAltKeyDown()) then
-    key = "ALT-" .. key;
-  end
-
-  insertKey(key);
-  scrollBarUpdate();
-  updateBindings();
+local function S(n,t)if(t=="UNKNOWN"or t=="LSHIFT"or t=="RSHIFT"or t=="LCTRL"or t=="RCTRL"or t=="LALT"or t=="RALT")then
+  return;
 end
-
-local function subAll(_, key)
-  if (
-    key == "UNKNOWN"
-    or key == "LSHIFT"
-    or key == "RSHIFT"
-    or key == "LCTRL"
-    or key == "RCTRL"
-    or key == "LALT"
-    or key == "RALT"
-  ) then
-    return;
-  end
-  if (key == "LeftButton") then
-    key = "BUTTON1"
-  elseif (key == "RightButton") then
-    key = "BUTTON2"
-  elseif (key == "MiddleButton") then
-    key = "BUTTON3"
-  else
-    key = string.gsub(key, "^Button(%d+)$", "BUTTON%1");
-  end
-
-  local offset;
-  for k, modifierCombo in ipairs(modifierCombosConfig) do
-    removeKey(modifierCombo .. key);
-  end
-  scrollBarUpdate();
-  updateBindings();
+if(t=="LeftButton")then
+  t="BUTTON1"elseif(t=="RightButton")then
+  t="BUTTON2"elseif(t=="MiddleButton")then
+  t="BUTTON3"else
+  t=string.gsub(t,"^Button(%d+)$","BUTTON%1");
 end
-
-local function subOne(_, key)
-  if (
-    key == "UNKNOWN"
-    or key == "LSHIFT"
-    or key == "RSHIFT"
-    or key == "LCTRL"
-    or key == "RCTRL"
-    or key == "LALT"
-    or key == "RALT"
-  ) then
-    return;
-  end
-  if (key == "LeftButton") then
-    key = "BUTTON1"
-  elseif (key == "RightButton") then
-    key = "BUTTON2"
-  elseif (key == "MiddleButton") then
-    key = "BUTTON3"
-  else
-    key = string.gsub(key, "^Button(%d+)$", "BUTTON%1");
-  end
-  if (IsShiftKeyDown()) then
-    key = "SHIFT-" .. key;
-  end
-  if (IsControlKeyDown()) then
-    key = "CTRL-" .. key;
-  end
-  if (IsAltKeyDown()) then
-    key = "ALT-" .. key;
-  end
-
-  removeKey(key);
-  scrollBarUpdate();
-  updateBindings();
+if(IsShiftKeyDown())then
+  t="SHIFT-"..t;
 end
-
-configFrame.addAllButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate");
-configFrame.addAllButton:SetWidth(130);
-configFrame.addAllButton:SetHeight(44);
-configFrame.addAllButton:SetPoint("TOPLEFT", 16, -42);
-configFrame.addAllButton:SetText("+\n(" .. MODIFIERS_COLON .. " " .. ALL .. ")");
-configFrame.addAllButton:SetFrameStrata("DIALOG");
-configFrame.addAllButton:SetScript("OnEnter", function(self) self:EnableKeyboard(true); end);
-configFrame.addAllButton:SetScript("OnLeave", function(self) self:EnableKeyboard(false); end);
-configFrame.addAllButton:SetScript("OnKeyDown", addAll);
-configFrame.addAllButton:SetScript("OnClick", addAll);
-configFrame.addAllButton:RegisterForClicks("AnyUp");
-
-configFrame.addButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate");
-configFrame.addButton:SetWidth(65);
-configFrame.addButton:SetHeight(22);
-configFrame.addButton:SetPoint("TOPLEFT", configFrame.addAllButton, "BOTTOMLEFT", 0, 0);
-configFrame.addButton:SetText("+");
-configFrame.addButton:SetFrameStrata("DIALOG");
-configFrame.addButton:SetScript("OnEnter", function(self) self:EnableKeyboard(true); end);
-configFrame.addButton:SetScript("OnLeave", function(self) self:EnableKeyboard(false); end);
-configFrame.addButton:SetScript("OnKeyDown", addOne);
-configFrame.addButton:SetScript("OnClick", addOne);
-configFrame.addButton:RegisterForClicks("AnyUp");
-
-configFrame.subButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate");
-configFrame.subButton:SetWidth(65);
-configFrame.subButton:SetHeight(22);
-configFrame.subButton:SetPoint("TOPLEFT", configFrame.addButton, "TOPRIGHT", 0, 0);
-configFrame.subButton:SetText("-");
-configFrame.subButton:SetFrameStrata("DIALOG");
-configFrame.subButton:SetScript("OnEnter", function(self) self:EnableKeyboard(true); end);
-configFrame.subButton:SetScript("OnLeave", function(self) self:EnableKeyboard(false); end);
-configFrame.subButton:SetScript("OnKeyDown", subOne);
-configFrame.subButton:SetScript("OnClick", subOne);
-configFrame.subButton:RegisterForClicks("AnyUp");
-
-configFrame.subAllButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate");
-configFrame.subAllButton:SetWidth(130);
-configFrame.subAllButton:SetHeight(44);
-configFrame.subAllButton:SetPoint("TOPRIGHT", configFrame.subButton, "BOTTOMRIGHT", 0, 0);
-configFrame.subAllButton:SetText("-\n(" .. MODIFIERS_COLON .. " " .. ALL .. ")");
-configFrame.subAllButton:SetFrameStrata("DIALOG");
-configFrame.subAllButton:SetScript("OnEnter", function(self) self:EnableKeyboard(true); end);
-configFrame.subAllButton:SetScript("OnLeave", function(self) self:EnableKeyboard(false); end);
-configFrame.subAllButton:SetScript("OnKeyDown", subAll);
-configFrame.subAllButton:SetScript("OnClick", subAll);
-configFrame.subAllButton:RegisterForClicks("AnyUp");
-
-configFrame.clearAllButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate");
-configFrame.clearAllButton:SetWidth(130);
-configFrame.clearAllButton:SetHeight(22);
-configFrame.clearAllButton:SetPoint("TOPLEFT", configFrame.addAllButton, "TOPRIGHT", 40, 0);
-configFrame.clearAllButton:SetText(CLEAR_ALL);
-configFrame.clearAllButton:SetScript("OnClick", function() wipe(keysConfig); scrollBarUpdate(); updateBindings(); end);
-
-configFrame.resetDefaultButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate");
-configFrame.resetDefaultButton:SetWidth(130);
-configFrame.resetDefaultButton:SetHeight(22);
-configFrame.resetDefaultButton:SetPoint("TOPRIGHT", configFrame.clearAllButton, "BOTTOMRIGHT", 0, 0);
-configFrame.resetDefaultButton:SetText(RESET_TO_DEFAULT);
-configFrame.resetDefaultButton:SetScript("OnClick", function() populateKeysConfig(); scrollBarUpdate(); updateBindings(); end);
-
-configFrame.enableButton = CreateFrame("CheckButton", "SnowfallKeyPress_configFrameEnableButton", configFrame, "UICheckButtonTemplate");
-configFrame.enableButton:SetWidth(22);
-configFrame.enableButton:SetHeight(22);
-configFrame.enableButton:SetPoint("TOPLEFT", configFrame.resetDefaultButton, "BOTTOMLEFT", 0, -40);
+if(IsControlKeyDown())then
+  t="CTRL-"..t;
+end
+if(IsAltKeyDown())then
+  t="ALT-"..t;
+end
+b(t);
+i();
+l();
+end
+e.addAllButton=CreateFrame("Button",nil,e,"UIPanelButtonTemplate");
+e.addAllButton:SetWidth(130);
+e.addAllButton:SetHeight(44);
+e.addAllButton:SetPoint("TOPLEFT",16,-42);
+e.addAllButton:SetText("+\n("..MODIFIERS_COLON.." "..ALL..")");
+e.addAllButton:SetFrameStrata("DIALOG");
+e.addAllButton:SetScript("OnEnter",function(e)e:EnableKeyboard(true);
+  end);
+e.addAllButton:SetScript("OnLeave",function(e)e:EnableKeyboard(false);
+  end);
+e.addAllButton:SetScript("OnKeyDown",f);
+e.addAllButton:SetScript("OnClick",f);
+e.addAllButton:RegisterForClicks("AnyUp");
+e.addButton=CreateFrame("Button",nil,e,"UIPanelButtonTemplate");
+e.addButton:SetWidth(65);
+e.addButton:SetHeight(22);
+e.addButton:SetPoint("TOPLEFT",e.addAllButton,"BOTTOMLEFT",0,0);
+e.addButton:SetText("+");
+e.addButton:SetFrameStrata("DIALOG");
+e.addButton:SetScript("OnEnter",function(e)e:EnableKeyboard(true);
+  end);
+e.addButton:SetScript("OnLeave",function(e)e:EnableKeyboard(false);
+  end);
+e.addButton:SetScript("OnKeyDown",p);
+e.addButton:SetScript("OnClick",p);
+e.addButton:RegisterForClicks("AnyUp");
+e.subButton=CreateFrame("Button",nil,e,"UIPanelButtonTemplate");
+e.subButton:SetWidth(65);
+e.subButton:SetHeight(22);
+e.subButton:SetPoint("TOPLEFT",e.addButton,"TOPRIGHT",0,0);
+e.subButton:SetText("-");
+e.subButton:SetFrameStrata("DIALOG");
+e.subButton:SetScript("OnEnter",function(e)e:EnableKeyboard(true);
+  end);
+e.subButton:SetScript("OnLeave",function(e)e:EnableKeyboard(false);
+  end);
+e.subButton:SetScript("OnKeyDown",S);
+e.subButton:SetScript("OnClick",S);
+e.subButton:RegisterForClicks("AnyUp");
+e.subAllButton=CreateFrame("Button",nil,e,"UIPanelButtonTemplate");
+e.subAllButton:SetWidth(130);
+e.subAllButton:SetHeight(44);
+e.subAllButton:SetPoint("TOPRIGHT",e.subButton,"BOTTOMRIGHT",0,0);
+e.subAllButton:SetText("-\n("..MODIFIERS_COLON.." "..ALL..")");
+e.subAllButton:SetFrameStrata("DIALOG");
+e.subAllButton:SetScript("OnEnter",function(e)e:EnableKeyboard(true);
+  end);
+e.subAllButton:SetScript("OnLeave",function(e)e:EnableKeyboard(false);
+  end);
+e.subAllButton:SetScript("OnKeyDown",O);
+e.subAllButton:SetScript("OnClick",O);
+e.subAllButton:RegisterForClicks("AnyUp");
+e.clearAllButton=CreateFrame("Button",nil,e,"UIPanelButtonTemplate");
+e.clearAllButton:SetWidth(130);
+e.clearAllButton:SetHeight(22);
+e.clearAllButton:SetPoint("TOPLEFT",e.addAllButton,"TOPRIGHT",40,0);
+e.clearAllButton:SetText(CLEAR_ALL);
+e.clearAllButton:SetScript("OnClick",function()wipe(a);
+  wipe(r);
+  i();
+  l();
+  end);
+e.resetDefaultButton=CreateFrame("Button",nil,e,"UIPanelButtonTemplate");
+e.resetDefaultButton:SetWidth(130);
+e.resetDefaultButton:SetHeight(22);
+e.resetDefaultButton:SetPoint("TOPRIGHT",e.clearAllButton,"BOTTOMRIGHT",0,0);
+e.resetDefaultButton:SetText(RESET_TO_DEFAULT);
+e.resetDefaultButton:SetScript("OnClick",function()h();
+  i();
+  l();
+  end);
+e.animationButton=CreateFrame("CheckButton","SnowfallKeyPress_configFrameAnimationButton",e,"UICheckButtonTemplate");
+e.animationButton:SetWidth(22);
+e.animationButton:SetHeight(22);
+e.animationButton:SetPoint("TOPLEFT",e.resetDefaultButton,"BOTTOMLEFT",0,-10);
+SnowfallKeyPress_configFrameAnimationButtonText:SetText(ANIMATION);
+e.animationButton:SetScript("OnClick",function(e)if(e:GetChecked())then SnowfallKeyPressSV.animation=true;
+  else SnowfallKeyPressSV.animation=false;
+    end end);
+e.enableButton=CreateFrame("CheckButton","SnowfallKeyPress_configFrameEnableButton",e,"UICheckButtonTemplate");
+e.enableButton:SetWidth(22);
+e.enableButton:SetHeight(22);
+e.enableButton:SetPoint("TOPLEFT",e.resetDefaultButton,"BOTTOMLEFT",0,-40);
 SnowfallKeyPress_configFrameEnableButtonText:SetText(ENABLE);
-configFrame.enableButton:SetScript("OnClick", function(self) if (self:GetChecked()) then SnowfallKeyPressSV.enable = true; hook = true; overrideFrame:RegisterEvent("UPDATE_BINDINGS"); updateBindings(); else SnowfallKeyPressSV.enable = false; updateBindings(); end end);
-
-configFrame.keyFrame = CreateFrame("Frame", nil, configFrame);
-configFrame.keyFrame:SetWidth(322);
-configFrame.keyFrame:SetHeight(16 * 16 + 12);
-configFrame.keyFrame:SetPoint("TOPLEFT", 16, -155);
-configFrame.keyFrame:SetBackdrop({
-  bgFile = "Interface\\BUTTONS\\WHITE8X8.BLP",
-  edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-  edgeSize = 16,
-  insets = {left = 4, right = 4, top = 4, bottom = 4},
-});
-configFrame.keyFrame:SetBackdropColor(0, 0, 0, 0);
-
-
-local numRows = 16;
-configFrame.keyRows = {};
-for i = 1, 16 do
-  configFrame.keyRows[i] = configFrame:CreateFontString(nil, "ARTWORK", "NumberFontNormalSmall");
-  configFrame.keyRows[i]:SetWidth(314);
-  configFrame.keyRows[i]:SetHeight(16);
-  configFrame.keyRows[i]:SetPoint("TOPLEFT", 16, -146 - 16 * i);
-  configFrame.keyRows[i]:SetJustifyH("RIGHT");
-  configFrame.keyRows[i]:SetText(i);
+e.enableButton:SetScript("OnClick",function(e)if(e:GetChecked())then SnowfallKeyPressSV.enable=true;
+  o:RegisterEvent("UPDATE_BINDINGS");
+  l();
+  A();
+  else SnowfallKeyPressSV.enable=false;
+    l();
+    end end);
+e.keyFrame=CreateFrame("Frame",nil,e);
+e.keyFrame:SetWidth(322);
+e.keyFrame:SetHeight(16*16+12);
+e.keyFrame:SetPoint("TOPLEFT",16,-155);
+e.keyFrame:SetBackdrop({bgFile="Interface\\BUTTONS\\WHITE8X8.BLP",edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",edgeSize=16,insets={left=4,right=4,top=4,bottom=4},});
+e.keyFrame:SetBackdropColor(0,0,0,0);
+local S=16;
+e.keyRows={};
+for t=1,16 do
+  e.keyRows[t]=e:CreateFontString(nil,"ARTWORK","NumberFontNormalSmall");
+  e.keyRows[t]:SetWidth(314);
+  e.keyRows[t]:SetHeight(16);
+  e.keyRows[t]:SetPoint("TOPLEFT",16,-146-16*t);
+  e.keyRows[t]:SetJustifyH("RIGHT");
+  e.keyRows[t]:SetText(t);
 end
-function scrollBarUpdate()
-  FauxScrollFrame_Update(configFrame.scrollBar, #keysConfig, numRows, 16);
-  local offset = FauxScrollFrame_GetOffset(configFrame.scrollBar);
-  for i = 1, 16 do
-    configFrame.keyRows[i]:SetText(keysConfig[offset + i]);
+function i()FauxScrollFrame_Update(e.scrollBar,#r,S,16);
+  local n=FauxScrollFrame_GetOffset(e.scrollBar);
+  for t=1,16 do
+    e.keyRows[t]:SetText(r[n+t]);
   end
 end
-configFrame.scrollBar = CreateFrame("ScrollFrame", "SnowfallKeyPress_configFrameScrollBar", configFrame, "FauxScrollFrameTemplate");
-configFrame.scrollBar:SetWidth(316);
-configFrame.scrollBar:SetHeight(16 * 16);
-configFrame.scrollBar:SetPoint("TOPLEFT", 16, -162);
-configFrame.scrollBar:SetScript("OnVerticalScroll", function(self, offset) FauxScrollFrame_OnVerticalScroll(self, offset, 16, scrollBarUpdate); end);
-configFrame.scrollBarTextureTop = configFrame.scrollBar:CreateTexture();
-configFrame.scrollBarTextureTop:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar");
-configFrame.scrollBarTextureTop:SetWidth(31);
-configFrame.scrollBarTextureTop:SetHeight(256);
-configFrame.scrollBarTextureTop:SetPoint("TOPLEFT", configFrame.scrollBar, "TOPRIGHT", -2, 5);
-configFrame.scrollBarTextureTop:SetTexCoord(0, 0.484375, 0, 1);
-configFrame.scrollBarTextureBottom = configFrame.scrollBar:CreateTexture();
-configFrame.scrollBarTextureBottom:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar");
-configFrame.scrollBarTextureBottom:SetWidth(31);
-configFrame.scrollBarTextureBottom:SetHeight(106);
-configFrame.scrollBarTextureBottom:SetPoint("BOTTOMLEFT", configFrame.scrollBar, "BOTTOMRIGHT", -2, -2);
-configFrame.scrollBarTextureBottom:SetTexCoord(0.515625, 1, 0, 0.4140625);
+e.scrollBar=CreateFrame("ScrollFrame","SnowfallKeyPress_configFrameScrollBar",e,"FauxScrollFrameTemplate");
+e.scrollBar:SetWidth(316);
+e.scrollBar:SetHeight(16*16);
+e.scrollBar:SetPoint("TOPLEFT",16,-162);
+e.scrollBar:SetScript("OnVerticalScroll",function(t,e)FauxScrollFrame_OnVerticalScroll(16,i, t,e);
+  end);
+e.scrollBarTextureTop=e.scrollBar:CreateTexture();
+e.scrollBarTextureTop:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar");
+e.scrollBarTextureTop:SetWidth(31);
+e.scrollBarTextureTop:SetHeight(256);
+e.scrollBarTextureTop:SetPoint("TOPLEFT",e.scrollBar,"TOPRIGHT",-2,5);
+e.scrollBarTextureTop:SetTexCoord(0,.484375,0,1);
+e.scrollBarTextureBottom=e.scrollBar:CreateTexture();
+e.scrollBarTextureBottom:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar");
+e.scrollBarTextureBottom:SetWidth(31);
+e.scrollBarTextureBottom:SetHeight(106);
+e.scrollBarTextureBottom:SetPoint("BOTTOMLEFT",e.scrollBar,"BOTTOMRIGHT",-2,-2);
+e.scrollBarTextureBottom:SetTexCoord(.515625,1,0,.4140625);
+hooksecurefunc("ShowUIPanel",function()if(KeyBindingFrame)then KeyBindingFrame.mode=nil;
+  end end);
+local b;
+local f;
+do
+local n={};
+local t=0;
+function b()local e;
+  if(#n>0)then
+    e=table.remove(n);
+  else
+    t=t+1;
+    e=CreateFrame("Button","SnowfallKeyPress_Button_"..tostring(t),nil,"SecureActionButtonTemplate");
+    e:RegisterForClicks("AnyDown");
+    -- SecureHandlerSetFrameRef(e,"VehicleMenuBar",VehicleMenuBar);
+    -- SecureHandlerSetFrameRef(e,"BonusActionBarFrame",BonusActionBarFrame);
+    -- SecureHandlerSetFrameRef(e,"MultiCastSummonSpellButton",MultiCastSummonSpellButton);
+    -- SecureHandlerExecute(e,[[
+      -- VehicleMenuBar = self:GetFrameRef("VehicleMenuBar");
 
+      -- BonusActionBarFrame = self:GetFrameRef("BonusActionBarFrame");
 
+      -- MultiCastSummonSpellButton = self:GetFrameRef("MultiCastSummonSpellButton");
 
-
---------------------------------------------------------------------------------
--- Clear key binding mode so that the Blizzard key binding UI doesn't look for overrides and generate bogus messages like: "CLICK SnowfallKeyPress_Button_1:LeftButton Function is Now Unbound!"
-
-hooksecurefunc("ShowUIPanel", function() if (KeyBindingFrame) then KeyBindingFrame.mode = nil; end end);
-
-
-
---------------------------------------------------------------------------------
--- Helper functions
-
-local function isSecureButton(x)
-  return not not (
-    type(x) == "table"
-    and type(x.IsObjectType) == "function"
-    and issecurevariable(x, "IsObjectType")
-    and x:IsObjectType("Button")
-    and select(2, x:IsProtected())
-  );
+      -- ]]);
+  end
+  return e;
+end
+function f(e)if(e)then
+  table.insert(n,e);
+end
+end
 end
 
+local function I(e)
+return not not(type(e)=="table"and type(e.IsObjectType)=="function"and issecurevariable(e,"IsObjectType")and e:IsObjectType("Button")and select(2,e:IsProtected()));
+end
 
--- Accelerate a key, which we must not currently be overriding
-local function accelerateKey(key, command)
-  local bindButtonName, bindButton;
-  local attributeName, attributeValue;
-  local mouseButton, harmButton, helpButton;
-  local mouseType, harmType, helpType;
-  local clickButtonName, clickButton;
-
-  for _, template in ipairs(templates) do
-    if (stringmatch(command, template.command)) then
-      -- make sure there are attributes. Otherwise, this key is blacklisted
-      if (template.attributes) then
-        clickButtonName, mouseButton = stringmatch(command, "^CLICK (.+):([^:]+)$");
-        if (clickButtonName) then
-          -- For clicks, check that the target is a SecureActionButton that isn't doing anything that could possibly rely on differentiating down/up clicks
-          clickButton = _G[clickButtonName];
-          if (not isSecureButton(clickButton) or clickButton:GetAttribute("", "downbutton", mouseButton)) then
+if(SnowfallKeyPress.animation.savedDefaultHandler)then
+  SnowfallKeyPress.animation.defaultHandler=SnowfallKeyPress.animation.savedDefaultHandler;
+  SnowfallKeyPress.animation.savedDefaultHandler=nil;
+end
+local function A(e)
+	if(not SnowfallKeyPressSV.animation)then
+	return;
+end
+local e=e.clickButtonName;
+if(not e)then
+  return;
+end
+local e=m[e];
+if(not e)then
+  return;
+end
+local t=false;
+for o,n in n(SnowfallKeyPress.animation.handlers)do
+  t=n(e)or t;
+end
+if(not t and SnowfallKeyPress.animation.defaultHandler)then
+  SnowfallKeyPress.animation.defaultHandler(e);
+end
+end
+local function S(L,p,f,d,a)local e;
+  local i,t;
+  local l,h,O;
+  local B,S,u;
+  local c,r;
+  a.override=nil;
+  SetOverrideBinding(o,false,f,nil);
+  for F,o in n(F)do
+    if(s(d,o.command))then
+      if(o.attributes)then
+        c,l=s(d,"^CLICK (.+):([^:]+)$");
+        if(c)then
+          r=m[c];
+          if(not I(r)or r:GetAttribute("","downbutton",l))then
             return;
           end
-          harmButton = SecureButton_GetModifiedAttribute(clickButton, "harmbutton", mouseButton);
-          helpButton = SecureButton_GetModifiedAttribute(clickButton, "helpbutton", mouseButton);
-          mouseType = SecureButton_GetModifiedAttribute(clickButton, "type", mouseButton);
-          harmType = SecureButton_GetModifiedAttribute(clickButton, "type", harmButton);
-          helpType = SecureButton_GetModifiedAttribute(clickButton, "type", helpButton);
-          if (
-            mouseType and not allowedTypeAttributes[mouseType]
-            or harmType and not allowedTypeAttributes[harmType]
-            or helpType and not allowedTypeAttributes[helpType]
-          ) then
+          h=SecureButton_GetModifiedAttribute(r,"harmbutton",l);
+          O=SecureButton_GetModifiedAttribute(r,"helpbutton",l);
+          B=SecureButton_GetModifiedAttribute(r,"type",l);
+          S=SecureButton_GetModifiedAttribute(r,"type",h);
+          u=SecureButton_GetModifiedAttribute(r,"type",O);
+          if(B and not T[B]or S and not T[S]or u and not T[u])then
             return;
           end
         else
-          -- For non-clicks, the default mouse button is LeftButton
-          mouseButton = "LeftButton";
+          l="LeftButton";
         end
-
-        -- make the bind button if it doesn't already exist
-        bindButtonName = "SnowfallKeyPress_Button_" .. key;
-        bindButton = _G[bindButtonName];
-        if (not bindButton) then
-          bindButton = CreateFrame("Button", "SnowfallKeyPress_Button_" .. key, nil, "SecureActionButtonTemplate");
-          bindButton:RegisterForClicks("AnyDown");
-          SecureHandlerSetFrameRef(bindButton, "VehicleMenuBar", VehicleMenuBar);
-          SecureHandlerSetFrameRef(bindButton, "BonusActionBarFrame", BonusActionBarFrame);
-          SecureHandlerSetFrameRef(bindButton, "MultiCastSummonSpellButton", MultiCastSummonSpellButton);
-          SecureHandlerExecute(
-            bindButton,
-            [[
-              VehicleMenuBar = self:GetFrameRef("VehicleMenuBar");
-              BonusActionBarFrame = self:GetFrameRef("BonusActionBarFrame");
-              MultiCastSummonSpellButton = self:GetFrameRef("MultiCastSummonSpellButton");
-            ]]
-          );
+        e=a.button;
+        if(not e)then
+          e=b();
+          a.button=e;
         end
+        --SecureHandlerUnwrapScript(e,"OnClick");
+        for r,n in n(o.attributes)do
+          i=n[1];
+          t=C(d,o.command,n[2],1);
+          if(i=="clickbutton")then
+            e:SetAttribute(i,m[t]);
+            e.clickButtonName=t;
+            e:SetScript("PostClick",A);
+            elseif(i=="actionbutton")then
+              -- SecureHandlerWrapScript(e,"OnClick",e,[[
+                -- if (VehicleMenuBar:IsProtected() and VehicleMenuBar:IsShown() and ]]..tostring(tonumber(t)<=VEHICLE_MAX_ACTIONBUTTONS)..[[) then
+                  -- self:SetAttribute("macrotext", "/click VehicleMenuBarActionButton]]..t..[[");
 
-        -- Clear out any old wrap script that may exist
-        SecureHandlerUnwrapScript(bindButton, "OnClick");
+                -- elseif (BonusActionBarFrame:IsProtected() and BonusActionBarFrame:IsShown()) then
+                  -- self:SetAttribute("macrotext", "/click BonusActionButton]]..t..[[");
 
-        -- apply specified attributes
-        for _, attribute in ipairs(template.attributes) do
-          attributeName = attribute[1];
-          attributeValue = stringgsub(command, template.command, attribute[2], 1);
+                -- else
+                  -- self:SetAttribute("macrotext", "/click ActionButton]]..t..[[");
 
-          if (attributeName == "clickbutton") then
-            -- For "clickbutton" attributes, convert the button name into a button reference
-            bindButton:SetAttribute(attributeName, _G[attributeValue]);
-          elseif (attributeName == "actionbutton") then
-            -- For our custom "actionbutton" attribute, we'll make the decision which button (vehicle/bonus/action) to click similar to how Blizzard does it in ActionButton.lua:ActionButtonUp()
-            SecureHandlerWrapScript(
-              bindButton, "OnClick", bindButton,
-              [[
-                local clickMacro = "/click ActionButton]] .. attributeValue .. [[";
-                if (VehicleMenuBar:IsProtected() and VehicleMenuBar:IsShown() and ]] .. tostring(tonumber(attributeValue) <= VEHICLE_MAX_ACTIONBUTTONS) .. [[) then
-                  clickMacro = "/click VehicleMenuBarActionButton]] .. attributeValue .. [[";
-                elseif (BonusActionBarFrame:IsProtected() and BonusActionBarFrame:IsShown()) then
-                  clickMacro = "/click BonusActionButton]] .. attributeValue .. [[";
-                end
-                self:SetAttribute("macrotext", clickMacro);
-              ]]
-            );
-          elseif (attributeName == "multicastsummon") then
-            -- For our custom "multicastsummon" attribute, before the click, we'll set the button ID based upon the binding
-            SecureHandlerWrapScript(
-              bindButton, "OnClick", bindButton,
-              [[
-                lastID = MultiCastSummonSpellButton:GetID();
-                MultiCastSummonSpellButton:SetID(]] .. attributeValue .. [[);
-              ]],
-              [[
-                MultiCastSummonSpellButton:SetID(lastID);
-              ]]
-            );
-            bindButton:SetAttribute("clickbutton", MultiCastSummonSpellButton);
-          else
-            bindButton:SetAttribute(attributeName, attributeValue);
+                -- end
+                -- ]]);
+              -- e:SetScript("PostClick",function(e)e.clickButtonName=string.sub(e:GetAttribute("macrotext"),8);
+                -- A(e);
+                -- end);
+				e:SetAttribute("macrotext", "/click [nostance] ActionButton"..t..";".."BonusActionButton"..t)
+				e.clickButtonName="ActionButton"..t
+				e:SetScript("PostClick", A);
+				--e:SetScript("PostClick", function() SnowfallKeyPress.animation.defaultHandler(e) end);
+              elseif(i=="multicastsummon")then
+                -- SecureHandlerWrapScript(e,"OnClick",e,[[
+                  -- lastID = MultiCastSummonSpellButton:GetID();
+
+                  -- MultiCastSummonSpellButton:SetID(]]..t..[[);
+
+                  -- ]],[[
+                  -- MultiCastSummonSpellButton:SetID(lastID);
+
+                  -- ]]);
+                -- e:SetAttribute("clickbutton",MultiCastSummonSpellButton);
+                -- e.clickButtonName="MultiCastSummonSpellButton";
+              else
+                e:SetAttribute(i,t);
+              end
+            end
+            a.override="CLICK "..e:GetName()..":"..l;
+            SetOverrideBinding(L,p,f,a.override);
           end
+          return;
         end
-
-        -- create a priority override
-        hook = false;
-        SetOverrideBindingClick(overrideFrame, true, key, bindButtonName, mouseButton);
-        hook = true;
       end
-
-      -- stop since we found a matching template
+    end
+    function l()if(InCombatLockdown())then
       return;
     end
-  end
-end
-
-
-
---------------------------------------------------------------------------------
--- UPDATE_BINDINGS
--- Find all keys. Accelerate them.
-
-function updateBindings()
-  if (InCombatLockdown()) then
-    return;
-  end
-
-  -- Remove all of our overrides so we can see other overrides
-  hook = false;
-  ClearOverrideBindings(overrideFrame);
-  hook = true;
-
-  if (not SnowfallKeyPressSV.enable) then
-    overrideFrame:UnregisterEvent("UPDATE_BINDINGS");
-    hook = false;
-    return;
-  end
-
-  -- Find all bound keys and accelerate them
-  local command;
-  for _, key in ipairs(keysConfig) do
-    command = GetBindingAction(key, true);
-    if (command) then
-      accelerateKey(key, command);
-    end
-  end
-end
-
-
-
-
---------------------------------------------------------------------------------
--- SetOverrideBinding*
--- Make sure this key is one we are supposed to accelerate. Remove our override. See what the key is bound to, now. Apply a new override.
-
-local function setOverrideBindingHook(_, _, overrideKey)
-  if (not hook or InCombatLockdown()) then
-    return;
-  end
-
-  local command;
-  for _, key in ipairs(keysConfig) do
-    if (overrideKey == key) then
-      hook = false;
-      SetOverrideBinding(overrideFrame, false, overrideKey, nil);
-      hook = true;
-      command = GetBindingAction(overrideKey, true);
-      if (command) then
-        accelerateKey(overrideKey, command);
+    d=false;
+    if(not SnowfallKeyPressSV.enable)then
+      o:UnregisterEvent("UPDATE_BINDINGS");
+      ClearOverrideBindings(o);
+      for t,o in c(u)do
+        for n,e in n(o.normals)do
+          SetOverrideBinding(e.owner,false,t,e.command);
+        end
+        for n,e in n(o.prioritys)do
+          SetOverrideBinding(e.owner,true,t,e.command);
+        end
       end
-      break;
+      d=true;
+      B=true;
+      return;
+    end
+    boundKeyColor=not boundKeyColor;
+    local r,e;
+    for t in c(a)do
+      r=GetBindingAction(t);
+      if(r)then
+        e=u[t];
+        if(not e)then
+          e={normals={},prioritys={}};
+          u[t]=e;
+        end
+        e.color=boundKeyColor;
+        e.command=r;
+        S(o,false,t,r,e);
+        if(e.override)then
+          for n,e in n(e.normals)do
+            SetOverrideBinding(e.owner,false,t,e.override);
+          end
+        end
+      end
+    end
+    for t,e in c(u)do
+      if(e.command and e.color~=boundKeyColor)then
+        e.command=nil;
+        if(e.override)then
+          e.override=nil;
+          SetOverrideBinding(o,false,t,nil);
+        end
+      end
+    end
+    if(B)then
+      B=false;
+      for t,o in c(u)do
+        for n,e in n(o.normals)do
+          if(e.override)then
+            SetOverrideBinding(e.owner,false,t,e.override);
+          else
+            S(e.owner,false,t,e.command,e);
+          end
+        end
+        for n,e in n(o.prioritys)do
+          if(e.override)then
+            SetOverrideBinding(e.owner,true,t,e.override);
+          else
+            S(e.owner,true,t,e.command,e);
+          end
+        end
+      end
+    end
+    d=true;
+  end
+  local function T(t,e)local n;
+    for n,o in c(e.normals)do
+      if(o.owner==t)then
+        return table.remove(e.normals,n);
+      end
+    end
+    for n,o in c(e.prioritys)do
+      if(o.owner==t)then
+        return table.remove(e.prioritys,n);
+      end
+    end
+  end
+  local function s(o,l,n,r)if(not d)then
+    return;
+  end
+  local e=u[n];
+  if(not e)then
+    e={normals={},prioritys={}};
+    u[n]=e;
+  end
+  if(not r)then
+    local e=T(o,e);
+    if(e)then
+      f(e.button);
+    end
+    return;
+  end
+  local t=T(o,e)or{owner=o};
+  t.command=r;
+  t.override=nil;
+  if(a[n]and SnowfallKeyPressSV.enable)then
+    if(InCombatLockdown())then
+      B=true;
+    else
+      d=false;
+      S(o,l,n,r,t);
+      d=true;
+    end
+  end
+  if(l)then
+    table.insert(e.prioritys,t);
+  else
+    table.insert(e.normals,t);
+  end
+end
+local function B(n,r,t,o,e)if(not e)then
+  e="LeftButton";
+end
+s(n,r,t,"CLICK "..o..":"..e);
+end
+local function S(o,n,e,t)s(o,n,e,"SPELL "..t);
+end
+local function t(o,e,t,n)s(o,e,t,"ITEM "..n);
+end
+local function T(o,n,t,e)s(o,n,t,"MACRO "..e);
+end
+hooksecurefunc("SetOverrideBinding",s);
+hooksecurefunc("SetOverrideBindingClick",B);
+hooksecurefunc("SetOverrideBindingSpell",S);
+hooksecurefunc("SetOverrideBindingItem",t);
+hooksecurefunc("SetOverrideBindingMacro",T);
+local function s(o)if(not d)then
+  return;
+end
+local e;
+for n,t in c(u)do
+  for n=#t.normals,1,-1 do
+    e=t.normals[n];
+    if(e.owner==o)then
+      f(e.button);
+      table.remove(t.normals,n);
+    end
+  end
+  for n=#t.prioritys,1,-1 do
+    e=t.prioritys[n];
+    if(e.owner==o)then
+      f(e.button);
+      table.remove(t.prioritys,n);
     end
   end
 end
-hooksecurefunc("SetOverrideBinding", setOverrideBindingHook);
-hooksecurefunc("SetOverrideBindingSpell", setOverrideBindingHook);
-hooksecurefunc("SetOverrideBindingClick", setOverrideBindingHook);
-hooksecurefunc("SetOverrideBindingItem", setOverrideBindingHook);
-hooksecurefunc("SetOverrideBindingMacro", setOverrideBindingHook);
-
-
-
---------------------------------------------------------------------------------
--- ClearOverrideBindings
--- Remove all our overrides. Re-apply overrides for all key bindings (to potentially new commands).
-
-local function clearOverrideBindingsHook()
-  if (not hook) then
-    return;
-  end
-
-  updateBindings();
 end
-hooksecurefunc("ClearOverrideBindings", clearOverrideBindingsHook);
-
-
-
-
-
-
-
-
-
---------------------------------------------------------------------------------
--- ADDON_LOADED
-
-local function addonLoaded()
-  if (not SnowfallKeyPressSV) then
-    SnowfallKeyPressSV = {keys = {}, enable = true};
-  end
-  keysConfig = SnowfallKeyPressSV.keys;
-
-  configFrame.enableButton:SetChecked(SnowfallKeyPressSV.enable);
-
-  if (#keysConfig == 0) then
-    populateKeysConfig();
-  end
-
-  scrollBarUpdate();
-
-  InterfaceOptions_AddCategory(configFrame);
-
-  overrideFrame:UnregisterAllEvents();
-  overrideFrame:SetScript("OnEvent", updateBindings);
-  overrideFrame:RegisterEvent("UPDATE_BINDINGS");
-  --overrideFrame:RegisterEvent("UPDATE_MACROS");
+hooksecurefunc("ClearOverrideBindings",s);
+local function t()if(not SnowfallKeyPressSV)then
+  SnowfallKeyPressSV={keys={},animation=true,enable=true};
 end
-overrideFrame:SetScript("OnEvent", addonLoaded);
-overrideFrame:RegisterEvent("ADDON_LOADED");
+r=SnowfallKeyPressSV.keys;
+a={};
+for n,t in n(r)do
+  a[t]=true;
+end
+e.enableButton:SetChecked(SnowfallKeyPressSV.enable);
+e.animationButton:SetChecked(SnowfallKeyPressSV.animation);
+if(#r==0)then
+  h();
+end
+i();
+InterfaceOptions_AddCategory(e);
+o:UnregisterAllEvents();
+o:SetScript("OnEvent",l);
+o:RegisterEvent("UPDATE_BINDINGS");
+end
+o:SetScript("OnEvent",t);
+o:RegisterEvent("ADDON_LOADED");
+
+if Bartender3 then
+	hooksecurefunc(Bartender3.Class.Button.prototype, "init", function(self, parent, id)
+			local button = _G["BT3Button"..id]
+			button:RegisterForClicks("AnyDown")
+			button.clickButtonName=button:GetName()
+			button:SetScript("PostClick", A);
+		end)
+end
+
+if Bartender4 then
+	local Bartender4_oldfunc = Bartender4.Button.Create
+	function Bartender4.Button:Create(id, parent)
+		local button = Bartender4_oldfunc(self, id, parent)			
+		button:RegisterForClicks("AnyDown")
+		button.clickButtonName=button:GetName()
+		button:SetScript("PostClick", A);
+		return button
+	end
+	
+	hooksecurefunc(Bartender4.modules.StanceBar, "CreateStanceButton", function(self, id)
+		local button = _G[string.format("BT4StanceButton%d", id)]
+		button:RegisterForClicks("AnyDown")
+		button.clickButtonName=button:GetName()
+		button:SetScript("PostClick", A);
+	end)
+	
+	hooksecurefunc(Bartender4.modules.PetBar, "OnEnable", function(self, ...)
+		for _, button in pairs(self.bar.buttons) do
+			button:RegisterForClicks("AnyDown")
+			button.clickButtonName=button:GetName()
+			button:SetScript("PostClick", A);
+		end
+	end)
+end
+
+if Bongos3 then
+	local Bongos3_oldfunc = Bongos3.modules.ActionBar.Button.Create
+		function Bongos3.modules.ActionBar.Button:Create(parent)
+			local button = Bongos3_oldfunc(self, parent)			
+			button:RegisterForClicks("AnyDown")
+			button.clickButtonName=button:GetName()
+			button:SetScript("PostClick", A);
+			return button
+		end
+end	
