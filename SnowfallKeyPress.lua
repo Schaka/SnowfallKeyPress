@@ -481,7 +481,11 @@ local function S(L,p,f,d,a)local e;
               -- e:SetScript("PostClick",function(e)e.clickButtonName=string.sub(e:GetAttribute("macrotext"),8);
                 -- A(e);
                 -- end);
-				e:SetAttribute("macrotext", "/click [nostance] ActionButton"..t..";".."BonusActionButton"..t)
+                if( select(2,UnitClass("player")) == "DRUID" ) then
+                	e:SetAttribute("macrotext", "/click [stance:1/3] BonusActionButton"..t..";".."ActionButton"..t)
+                else
+					e:SetAttribute("macrotext", "/click [nostance] ActionButton"..t..";".."BonusActionButton"..t)
+				end
 				e.clickButtonName="ActionButton"..t
 				e:SetScript("PostClick", A);
 				--e:SetScript("PostClick", function() SnowfallKeyPress.animation.defaultHandler(e) end);
