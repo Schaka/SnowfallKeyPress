@@ -376,7 +376,7 @@ function b()local e;
   else
     t=t+1;
     e=CreateFrame("Button","SnowfallKeyPress_Button_"..tostring(t),nil,"SecureActionButtonTemplate");
-    e:RegisterForClicks("AnyDown");
+    e:RegisterForClicks("AnyUp", "AnyDown");
     -- SecureHandlerSetFrameRef(e,"VehicleMenuBar",VehicleMenuBar);
     -- SecureHandlerSetFrameRef(e,"BonusActionBarFrame",BonusActionBarFrame);
     -- SecureHandlerSetFrameRef(e,"MultiCastSummonSpellButton",MultiCastSummonSpellButton);
@@ -689,7 +689,7 @@ o:RegisterEvent("ADDON_LOADED");
 if Bartender3 then
 	hooksecurefunc(Bartender3.Class.Button.prototype, "init", function(self, parent, id)
 			local button = _G["BT3Button"..id]
-			button:RegisterForClicks("AnyDown")
+			button:RegisterForClicks("AnyUp", "AnyDown")
 			button.clickButtonName=button:GetName()
 			button:SetScript("PostClick", A);
 		end)
@@ -699,7 +699,7 @@ if Bartender4 then
 	local Bartender4_oldfunc = Bartender4.Button.Create
 	function Bartender4.Button:Create(id, parent)
 		local button = Bartender4_oldfunc(self, id, parent)			
-		button:RegisterForClicks("AnyDown")
+		button:RegisterForClicks("AnyUp", "AnyDown")
 		button.clickButtonName=button:GetName()
 		button:SetScript("PostClick", A);
 		return button
@@ -707,14 +707,14 @@ if Bartender4 then
 	
 	hooksecurefunc(Bartender4.modules.StanceBar, "CreateStanceButton", function(self, id)
 		local button = _G[string.format("BT4StanceButton%d", id)]
-		button:RegisterForClicks("AnyDown")
+		button:RegisterForClicks("AnyUp", "AnyDown")
 		button.clickButtonName=button:GetName()
 		button:SetScript("PostClick", A);
 	end)
 	
 	hooksecurefunc(Bartender4.modules.PetBar, "OnEnable", function(self, ...)
 		for _, button in pairs(self.bar.buttons) do
-			button:RegisterForClicks("AnyDown")
+			button:RegisterForClicks("AnyUp", "AnyDown")
 			button.clickButtonName=button:GetName()
 			button:SetScript("PostClick", A);
 		end
@@ -725,7 +725,7 @@ if Bongos3 then
 	local Bongos3_oldfunc = Bongos3.modules.ActionBar.Button.Create
 		function Bongos3.modules.ActionBar.Button:Create(parent)
 			local button = Bongos3_oldfunc(self, parent)			
-			button:RegisterForClicks("AnyDown")
+			button:RegisterForClicks("AnyUp", "AnyDown")
 			button.clickButtonName=button:GetName()
 			button:SetScript("PostClick", A);
 			return button
