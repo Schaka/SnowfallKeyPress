@@ -376,7 +376,7 @@ function b()local e;
   else
     t=t+1;
     e=CreateFrame("Button","SnowfallKeyPress_Button_"..tostring(t),nil,"SecureActionButtonTemplate");
-    e:RegisterForClicks("AnyUp", "AnyDown");
+    e:RegisterForClicks("AnyDown");
     -- SecureHandlerSetFrameRef(e,"VehicleMenuBar",VehicleMenuBar);
     -- SecureHandlerSetFrameRef(e,"BonusActionBarFrame",BonusActionBarFrame);
     -- SecureHandlerSetFrameRef(e,"MultiCastSummonSpellButton",MultiCastSummonSpellButton);
